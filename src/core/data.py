@@ -1,8 +1,12 @@
 import torch
 import os
+from os import sys, path
 from torch.utils.data import Dataset
 import pandas as pd
 from PIL import Image
+
+if __name__ == '__main__' and __package__ is None:
+    sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from .config import DATA_ANNOTATION
 
 class RaspiDataset(Dataset):
@@ -18,7 +22,7 @@ class RaspiDataset(Dataset):
         self.labels = torch.tensor(frame['label'])
 
     def __getitem__(self, index):
-        img_path = os.path.join(self.data_root, self.image_path_series[index])
+        img_path = path.join(self.data_root, self.image_path_series[index])
         image = Image.open(img_path)
         return torch.tensor(image), self.labels
 
