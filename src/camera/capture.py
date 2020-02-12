@@ -6,7 +6,7 @@ from os import sys, path
 if __name__ == '__main__' and __package__ is None:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
-from core.config import DATA_ROOT, PERSON, IMG_NUM, TIME_DISTANCE, RESOLUTION
+from src.utils.config import DATA_ROOT, PERSON, IMG_NUM, TIME_DISTANCE, RESOLUTION
 
 if __name__ == '__main__':
     camera = PiCamera()

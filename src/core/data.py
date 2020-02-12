@@ -7,7 +7,8 @@ from PIL import Image
 
 if __name__ == '__main__' and __package__ is None:
     sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from .config import DATA_ANNOTATION
+
+from src.utils.config import DATA_ANNOTATION
 
 class RaspiDataset(Dataset):
 
