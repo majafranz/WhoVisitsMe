@@ -1,5 +1,8 @@
-from enum import Enum, auto
+from enum import Enum
 
 class Person(Enum):
-    MATHIAS = auto()
-    MAJA = auto()
+    NONE = 0
+    MATHIAS = 1
+    MAJA = 2
+    BOTH = 3
+    OTHER = 4
