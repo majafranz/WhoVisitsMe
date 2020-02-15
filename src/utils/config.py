@@ -1,4 +1,6 @@
 from src.utils.enums import Person
+from os import path
+from torchvision import transforms as T
 
 ##### - CAPTURE CONFIG - #####
 PERSON = Person.MAJA
@@ -9,8 +11,14 @@ RESOLUTION = None
 RESET = True
 
 ##### - DATA CONFIG - #####
-DATA_ROOT = "../data"
-DATA_ANNOTATION = ""
+DATA_ROOT = path.join('..', '..', 'data')  # done with join due to windows using \ and linux /
+DATA_ANNOTATION = path.join(DATA_ROOT, "annotation.csv")
+TRANSFORMS = T.Compose([
+    T.ToTensor()
+])
 
 ##### - TRAINING CONFIG - #####
 NUM_CLASSES = 2
+
+##### - ADDITIONAL CONFIG - #####
+LOG_ROOT = path.join('..', '..', 'log')

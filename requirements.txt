@@ -3,3 +3,4 @@ torchvision
 cudatoolkit
 pandas
 pillow
+colorlog

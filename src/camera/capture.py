@@ -37,7 +37,7 @@ if __name__ == '__main__':
     if RESOLUTION is not None:
         camera.resolution = RESOLUTION
 
-    dirname = str(PERSON).split('.')[1].capitalize()
+    dirname = PERSON.name.capitalize()
     root_path = path.join(DATA_ROOT, dirname)
     img_name_format = '{:06d}.jpg'
 
