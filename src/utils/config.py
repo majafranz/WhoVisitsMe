@@ -17,13 +17,15 @@ DATA_ANNOTATION = path.join(DATA_ROOT, "annotation.csv")
 IMAGE_SIZE = 244  # size of input image
 IMAGE_SCALE = 1.3  # how much of the image can be cut off
 
-BATCH_SIZE = 4
-NUM_WORKERS = 5
+BATCH_SIZE = 16
+NUM_WORKERS = 2
 SHUFFLE = True
 TRAIN_SPLIT = 0.8
+RANDOM_SEED = False # uses different training test split for each training. I'm not sure if it is good tbh
 
 ##### - TRAINING CONFIG - #####
-NUM_CLASSES = 2
+NUM_CLASSES = 5
+NUM_EPOCHS = 10
 
 ##### - ADDITIONAL CONFIG - #####
 LOG_ROOT = path.join('..', '..', 'log')

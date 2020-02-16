@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 import time
 
-from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE, BATCH_SIZE, SHUFFLE, NUM_WORKERS, TRAIN_SPLIT
+from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE, BATCH_SIZE, SHUFFLE, NUM_WORKERS, TRAIN_SPLIT, RANDOM_SEED
 from src.utils.enums import Person
 from src.utils.logger import logger
 
@@ -41,9 +41,10 @@ def get_dataloaders():
 
     indices = list(range(len(dataset)))
     split = int(np.floor(TRAIN_SPLIT * len(dataset)))
+    seed = int(time.time()) if RANDOM_SEED else 27
 
     if SHUFFLE:
-        np.random.seed(int(time.time()))
+        np.random.seed(seed)
         np.random.shuffle(indices)
 
     train_indices, test_indices = indices[:split], indices[split:]
@@ -99,4 +100,3 @@ class CustomTransforms:
             T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
         return transforms(image)
-
