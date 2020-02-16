@@ -6,16 +6,15 @@ from torch.utils.data import Dataset
 import pandas as pd
 from PIL import Image
 
-from src.utils.config import DATA_ANNOTATION, DATA_ROOT, TRANSFORMS
+from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE
 from src.utils.enums import Person
 from src.utils.logger import logger
 
+
 class RaspiDataset(Dataset):
 
-    def __init__(self, annot, rootdir=os.getcwd(), transforms=None):
-
+    def __init__(self, annot, rootdir=os.getcwd()):
         self.data_root = rootdir
-        self.transforms = transforms
 
         frame = pd.read_csv(annot)
         logger.info('loaded annotations from file: \'{:s}\''.format(annot))
@@ -23,10 +22,7 @@ class RaspiDataset(Dataset):
         self.image_path_series = frame['image']
         self.labels = torch.tensor(frame['label'])
 
-        if transforms == None:
-            self.transforms = T.Compose([
-                T.ToTensor(),
-            ])
+        self.transforms = CustomTransforms(IMAGE_SIZE, IMAGE_SCALE)
 
     def __getitem__(self, index):
         img_path = path.join(self.data_root, self.image_path_series[index])
@@ -39,17 +35,17 @@ class RaspiDataset(Dataset):
 
 
 def dataset():
-    dataset= RaspiDataset(DATA_ANNOTATION, DATA_ROOT, TRANSFORMS)
+    dataset = RaspiDataset(DATA_ANNOTATION, DATA_ROOT)
 
-def generate_csv(absolutePath = True):
+def generate_csv(absolutePath=True):
     images = []
     labels = []
-    print(os.getcwd())
+
     for person in Person:
         person_root = path.join(DATA_ROOT, person.name.capitalize())
-        if(os.path.exists(person_root)):
+        if os.path.exists(person_root):
             if absolutePath:
-                images.extend([path.join(os.getcwd(), person_root, img) for img in os.listdir(person_root)])
+                images.extend([os.path.abspath(path.join(person_root, img)) for img in os.listdir(person_root)])
             else:
                 images.extend([path.join(person_root, img) for img in os.listdir(person_root)])
 
@@ -58,8 +54,31 @@ def generate_csv(absolutePath = True):
     data = {'image': images,
             'label': labels}
 
-    frame = pd.DataFrame(data, columns= ['image', 'label'])
+    frame = pd.DataFrame(data, columns=['image', 'label'])
 
     frame.to_csv(DATA_ANNOTATION)
     logger.info('Annotation created at {:s}'.format(DATA_ANNOTATION))
 
+
+class CustomTransforms:
+
+    def __init__(self, dst_size, scale):
+        self.dst_size = dst_size
+        self.scale = scale
+
+    def __call__(self, image):
+        ratio = float(self.dst_size * self.scale) / max(image.size)
+        resize1 = (int(image.size[1] * ratio), int(image.size[0] * ratio))
+        padding = (int(image.size[0] * ratio) - int(image.size[1] * ratio)) // 2
+
+        transforms = T.Compose([
+            T.Resize(resize1),
+            T.Pad((0, padding, 0, padding), padding_mode='edge'),
+            T.CenterCrop(self.dst_size),
+            T.ToTensor(),
+            T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+        return transforms(image)
+
+
+dataset()

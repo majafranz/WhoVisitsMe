@@ -13,9 +13,8 @@ RESET = True
 ##### - DATA CONFIG - #####
 DATA_ROOT = path.join('..', '..', 'data')  # done with join due to windows using \ and linux /
 DATA_ANNOTATION = path.join(DATA_ROOT, "annotation.csv")
-TRANSFORMS = T.Compose([
-    T.ToTensor()
-])
+IMAGE_SIZE = 244 # size of input image
+IMAGE_SCALE = 1.3 # how much of the image can be cut off
 
 ##### - TRAINING CONFIG - #####
 NUM_CLASSES = 2

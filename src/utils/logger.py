@@ -1,12 +1,12 @@
 import logging
 from src.utils.config import LOG_ROOT
-import os, sys
+import os
 from colorlog import ColoredFormatter
 
 if not os.path.exists(LOG_ROOT):
     os.makedirs(LOG_ROOT, exist_ok=True)
 
-FORMAT_FILE = '%(asctime)-8s | %(message)s'
+FORMAT_FILE = '%(levelname)-8s | %(asctime)-8s | %(message)s'
 FORMAT_STOUT = '%(log_color)s%(asctime)-8s | %(message)s%(reset)s'
 DATE_FMT = '%d-%b-%y %H:%M:%S'
 
