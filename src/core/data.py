@@ -1,12 +1,14 @@
 import torch
 from torchvision import transforms as T
 import os
-from os import sys, path
-from torch.utils.data import Dataset
+from os import path
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import pandas as pd
+import numpy as np
 from PIL import Image
+import time
 
-from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE
+from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE, BATCH_SIZE, SHUFFLE, NUM_WORKERS, TRAIN_SPLIT
 from src.utils.enums import Person
 from src.utils.logger import logger
 
@@ -34,8 +36,27 @@ class RaspiDataset(Dataset):
         return len(self.labels)
 
 
-def dataset():
+def get_dataloaders():
     dataset = RaspiDataset(DATA_ANNOTATION, DATA_ROOT)
+
+    indices = list(range(len(dataset)))
+    split = int(np.floor(TRAIN_SPLIT * len(dataset)))
+
+    if SHUFFLE:
+        np.random.seed(int(time.time()))
+        np.random.shuffle(indices)
+
+    train_indices, test_indices = indices[:split], indices[split:]
+
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+
+    train_loader = DataLoader(dataset, sampler=train_sampler, num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
+    test_loader = DataLoader(dataset, sampler=test_sampler, num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
+
+    logger.info('loaded dataset with {:d} train-samples and {:d} test-samples'.format(len(train_indices), len(test_indices)))
+
+    return train_loader, test_loader
 
 def generate_csv(absolutePath=True):
     images = []
@@ -61,7 +82,6 @@ def generate_csv(absolutePath=True):
 
 
 class CustomTransforms:
-
     def __init__(self, dst_size, scale):
         self.dst_size = dst_size
         self.scale = scale
@@ -80,5 +100,3 @@ class CustomTransforms:
         ])
         return transforms(image)
 
-
-dataset()
