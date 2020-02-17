@@ -54,7 +54,7 @@ def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
         else:
             formatstr = 'epoch {:2d}, step {:3d}: test loss={:.2f}, test accuracy={:.2f}%'
 
-        if not i % 25 or i == epoch-1:
+        if not i % 25 or i == len(data_loader)-1:
             acc_avg = acc_sum / (i + 1)
             loss_avg = loss_sum / (i + 1)
 
