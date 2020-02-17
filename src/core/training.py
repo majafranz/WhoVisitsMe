@@ -3,6 +3,8 @@ import sys
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from tqdm import tqdm
+import math
 
 from src.utils.config import NUM_EPOCHS, NUM_CLASSES
 from src.utils.logger import trlog, logger
@@ -22,43 +24,47 @@ def train(net, num_epochs, train_loader, test_loader, criterion, optimizer, devi
 
 
 def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
-    acc_sum, acc_avg, loss_sum, loss_avg = 0.0, 0.0, 0.0, 0.0
 
-    for i, (images, labels) in enumerate(data_loader):
-        images = images.to(device)
-        labels = labels.to(device)
+    acc_sum, acc_avg, loss_sum, loss_avg = 0.0, 0.0, 0.0, math.inf
 
-        sys.stdout.write('\rBatch {:d}/{:d}'.format(i, len(data_loader)))
-        sys.stdout.flush()
-
-        if training:
-            optimizer.zero_grad()
-
-        outputs = net(images)
-
-        loss = criterion(outputs, labels)
+    with tqdm(data_loader, ascii=True, unit='batches',
+              bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}| {n_fmt:3}/{total_fmt:3} |'
+                         ' time elapsed: {elapsed}, time remaining: {remaining:5}, {rate_fmt:14} |'
+                         ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}',
+              postfix=[dict(epoch=epoch+1, loss=loss_avg, acc=acc_avg)]) as t:
 
         if training:
-            loss.backward()
-            optimizer.step()
-
-        _, predicted = torch.max(outputs.data, 1)
-        correct = (predicted == labels).sum(dtype=torch.float32)
-        accuracy = 100 * correct / len(labels)
-
-        acc_sum += accuracy.item()
-        loss_sum += loss.item()
-
-        if training:
-            formatstr = 'epoch {:2d}, step {:3d}: train loss={:.2f}, train accuracy={:.2f}%'
+            t.set_description('training')
         else:
-            formatstr = 'epoch {:2d}, step {:3d}: test loss={:.2f}, test accuracy={:.2f}%'
+            t.set_description('training')
 
-        if not i % 25 or i == len(data_loader)-1:
+        for i, (images, labels) in enumerate(t):
+            images = images.to(device)
+            labels = labels.to(device)
+
+            if training:
+                optimizer.zero_grad()
+
+            outputs = net(images)
+
+            loss = criterion(outputs, labels)
+
+            if training:
+                loss.backward()
+                optimizer.step()
+
+            _, predicted = torch.max(outputs.data, 1)
+            correct = (predicted == labels).sum(dtype=torch.float32)
+            accuracy = 100 * correct / len(labels)
+
+            acc_sum += accuracy.item()
+            loss_sum += loss.item()
+
             acc_avg = acc_sum / (i + 1)
             loss_avg = loss_sum / (i + 1)
 
-            trlog.info(formatstr.format(epoch + 1, i, loss_avg, acc_avg))
+            t.postfix[0]['loss'] = loss_avg
+            t.postfix[0]['acc'] = acc_avg
 
 
 def start_training():

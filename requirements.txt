@@ -5,3 +5,4 @@ cudatoolkit
 pandas
 pillow
 colorlog
+tqdm
