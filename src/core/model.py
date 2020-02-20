@@ -27,14 +27,18 @@ def model(num_classes):
     return model, epoch
 
 
-def save_model(model, epoch=0, loss=math.inf, acc=0.0):
+def save_model(model, epoch=0, loss=math.inf, name=None):
 
-    if SPEC_SAVE_NAME is None:
-        fmt = 'model_%Y%m%d_%H%M%S.pt'
-        filename = datetime.now().strftime(fmt)
+    if SPEC_SAVE_NAME is not None:
+        filename = SPEC_SAVE_NAME
 
     else:
-        filename= SPEC_SAVE_NAME
+        if name is None:
+            filename = name
+
+        else:
+            fmt = 'model_%Y%m%d_%H%M%S.pt'
+            filename = datetime.now().strftime(fmt)
 
     if not os.path.exists(SAVE_PATH):
         os.mkdir(SAVE_PATH)
@@ -48,3 +52,5 @@ def save_model(model, epoch=0, loss=math.inf, acc=0.0):
             }, full_path)
 
     logger.info('Saved model in {:s}'.format(full_path))
+
+    return filename

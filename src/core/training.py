@@ -19,8 +19,12 @@ from src.core.data import get_dataloaders
 def train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch):
     start_time = datetime.now()
     plot = PlotLosses(skip_first=0)
+    plot.global_step = start_epoch
 
-    num_epochs = NUM_EPOCHS+start_epoch
+    num_epochs = NUM_EPOCHS + start_epoch
+    save_name = None
+
+    min_loss = math.inf
 
     for epoch in range(start_epoch, num_epochs):
         logger.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
@@ -28,6 +32,10 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
         loss, acc = fit(net, train_loader, criterion, optimizer, device, epoch, training=True)
         net.eval()
         val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, training=False)
+
+        if min_loss > val_loss:
+            save_name = save_model(net, epoch, loss=val_loss, name=save_name)
+            min_loss = val_loss
 
         if PLOT:
             plot.update({
@@ -39,9 +47,8 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
             plot.draw()
             print()
 
-    save_model(net, num_epochs)
+    logger.info('Finished training in {}'.format((datetime.now() - start_time)))
 
-    logger.info('Finished training in {}'.format((datetime.now()-start_time)))
 
 def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
     acc_sum, acc_avg, loss_sum, loss_avg = 0.0, 0.0, 0.0, math.inf

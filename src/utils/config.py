@@ -31,7 +31,7 @@ NUM_EPOCHS = 10
 PLOT = True
 LR = 0.001
 SAVE_PATH = path.join(REL_PATH, 'models')
-LOAD_MODEL_PATH = 'model_20200220_162619.pt'
+LOAD_MODEL_PATH = 'test.pt'
 SPEC_SAVE_NAME = 'test.pt'
 
 ##### - ADDITIONAL CONFIG - #####
