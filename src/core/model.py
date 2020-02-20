@@ -19,7 +19,7 @@ def model(num_classes):
         model.load_state_dict(ckpt['model_state_dict'])
         # optimizer.load_state_dict(ckpt['optimizer_state_dict'])
         epoch = ckpt['epoch']
-        logger.info('Loaded model from file: {:s}'.format(load_path))
+        logger.info('Loaded model from file: \'{:s}\''.format(load_path))
 
     else:
         epoch = 0
@@ -33,7 +33,7 @@ def save_model(model, epoch=0, loss=math.inf, name=None):
         filename = SPEC_SAVE_NAME
 
     else:
-        if name is None:
+        if name is not None:
             filename = name
 
         else:
@@ -51,6 +51,6 @@ def save_model(model, epoch=0, loss=math.inf, name=None):
                 'loss': loss,
             }, full_path)
 
-    logger.info('Saved model in {:s}'.format(full_path))
+    logger.info('Saved model in \'{:s}\''.format(full_path))
 
     return filename
