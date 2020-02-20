@@ -1,6 +1,7 @@
 /venv/
 /.idea/
 /data/
+/data_trans/
 *.pyc
 */__pycache__/
 /log/

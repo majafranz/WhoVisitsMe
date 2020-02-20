@@ -8,16 +8,18 @@ import numpy as np
 from PIL import Image
 import time
 
-from src.utils.config import DATA_ANNOTATION, DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE, BATCH_SIZE, SHUFFLE, NUM_WORKERS, TRAIN_SPLIT, RANDOM_SEED
+from src.utils.config import DATA_ROOT, IMAGE_SIZE, IMAGE_SCALE, BATCH_SIZE, SHUFFLE, NUM_WORKERS, TRAIN_SPLIT, \
+    RANDOM_SEED, TRANS_DATA_ROOT
 from src.utils.enums import Person
 from src.utils.logger import logger
 
 
 class RaspiDataset(Dataset):
 
-    def __init__(self, annot, rootdir=os.getcwd()):
+    def __init__(self, rootdir=os.getcwd()):
         self.data_root = rootdir
 
+        annot = os.path.join(rootdir, 'annotation.csv')
         frame = pd.read_csv(annot)
         logger.info('loaded annotations from file: \'{:s}\''.format(annot))
 
@@ -37,7 +39,7 @@ class RaspiDataset(Dataset):
 
 
 def get_dataloaders():
-    dataset = RaspiDataset(DATA_ANNOTATION, DATA_ROOT)
+    dataset = RaspiDataset(TRANS_DATA_ROOT)
 
     indices = list(range(len(dataset)))
     split = int(np.floor(TRAIN_SPLIT * len(dataset)))
@@ -55,16 +57,18 @@ def get_dataloaders():
     train_loader = DataLoader(dataset, sampler=train_sampler, num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
     test_loader = DataLoader(dataset, sampler=test_sampler, num_workers=NUM_WORKERS, batch_size=BATCH_SIZE)
 
-    logger.info('loaded dataset with {:d} train-samples and {:d} test-samples'.format(len(train_indices), len(test_indices)))
+    logger.info(
+        'loaded dataset with {:d} train-samples and {:d} test-samples'.format(len(train_indices), len(test_indices)))
 
     return train_loader, test_loader
 
-def generate_csv(absolutePath=True):
+
+def generate_csv(data_root, absolutePath=True):
     images = []
     labels = []
 
     for person in Person:
-        person_root = path.join(DATA_ROOT, person.name.capitalize())
+        person_root = path.join(data_root, person.name.capitalize())
         if os.path.exists(person_root):
             if absolutePath:
                 images.extend([os.path.abspath(path.join(person_root, img)) for img in os.listdir(person_root)])
@@ -78,14 +82,16 @@ def generate_csv(absolutePath=True):
 
     frame = pd.DataFrame(data, columns=['image', 'label'])
 
-    frame.to_csv(DATA_ANNOTATION)
-    logger.info('Annotation created at {:s}'.format(DATA_ANNOTATION))
+    csvfile = os.path.join(data_root, 'annotation.csv')
+    frame.to_csv(csvfile)
+    logger.info('Annotation created at {:s}'.format(csvfile))
 
 
 class CustomTransforms:
-    def __init__(self, dst_size, scale):
+    def __init__(self, dst_size, scale, store=False):
         self.dst_size = dst_size
         self.scale = scale
+        self.store = store
 
     def __call__(self, image):
         ratio = float(self.dst_size * self.scale) / max(image.size)
@@ -96,7 +102,60 @@ class CustomTransforms:
             T.Resize(resize1),
             T.Pad((0, padding, 0, padding), padding_mode='edge'),
             T.CenterCrop(self.dst_size),
-            T.ToTensor(),
-            T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
-        return transforms(image)
+
+        if self.store:
+            return transforms(image)
+
+        else:
+            image = transforms(image)
+            tensor_transforms = T.Compose([
+                T.ToTensor(),
+                T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+            ])
+            return tensor_transforms(image)
+
+
+def store_transformed_imgs():
+    csvfile = os.path.join(DATA_ROOT, 'annotation.csv')
+    trans_csvfile = os.path.join(TRANS_DATA_ROOT, 'annotation.csv')
+
+    if os.path.exists(csvfile):
+        frame = pd.read_csv(csvfile)
+
+        transforms = CustomTransforms(IMAGE_SIZE, IMAGE_SCALE, True)
+
+        image_path_series = frame['image']
+
+        if os.path.exists(trans_csvfile):
+            frame = pd.read_csv(trans_csvfile)
+
+            image_path_series_trans = frame['image']
+
+        else:
+            image_path_series_trans = None
+
+        os.makedirs(TRANS_DATA_ROOT, exist_ok=True)
+
+        for i, (path) in enumerate(image_path_series):
+            _path = path[path.rfind('\\', 0, path.rfind('\\')) + 1:] if path.rfind('\\') > -1 \
+                else path[path.rfind('/', 0, path.rfind('/')) + 1:]
+
+            if (image_path_series_trans is not None) and \
+                    (os.path.abspath(os.path.join(TRANS_DATA_ROOT, _path)) in np.array(image_path_series_trans)):
+                continue
+
+            new_path = os.path.join(TRANS_DATA_ROOT, _path)
+            os.makedirs(os.path.dirname(new_path), exist_ok=True)
+            image = Image.open(path)
+            image = transforms(image)
+            image.save(new_path)
+            logger.info('transformed image stored in \'{:s}\''.format(new_path))
+
+        logger.info('transformed images stored in \'{:s}\''.format(TRANS_DATA_ROOT))
+
+        generate_csv(TRANS_DATA_ROOT)
+
+    else:
+        logger.error('OOPSI PUPSI! Seems like csv file is missing')
+
