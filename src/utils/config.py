@@ -1,6 +1,9 @@
 from src.utils.enums import Person
 from os import path
 
+##### - OVERALL CONFIG - #####
+REL_PATH = path.join('..')  # easy to change relative paths for root folder
+
 ##### - CAPTURE CONFIG - #####
 PERSON = Person.MAJA
 IMG_NUM = 100
@@ -10,7 +13,7 @@ RESOLUTION = None
 RESET = False
 
 ##### - DATA CONFIG - #####
-DATA_ROOT = path.join('..', '..', 'data')  # done with join due to windows using \ and linux /
+DATA_ROOT = path.join(REL_PATH, 'data')  # done with join due to windows using \ and linux /
 DATA_ANNOTATION = path.join(DATA_ROOT, "annotation.csv")
 
 IMAGE_SIZE = 244  # size of input image
@@ -20,11 +23,16 @@ BATCH_SIZE = 12
 NUM_WORKERS = 2
 SHUFFLE = True
 TRAIN_SPLIT = 0.8
-RANDOM_SEED = False # uses different training test split for each training. I'm not sure if it is good tbh
+RANDOM_SEED = False  # If true it uses different training test split for each training. I'm not sure if it is good tbh
 
 ##### - TRAINING CONFIG - #####
 NUM_CLASSES = 5
 NUM_EPOCHS = 10
+PLOT = True
+LR = 0.001
+SAVE_PATH = path.join(REL_PATH, 'models')
+LOAD_MODEL_PATH = 'model_20200220_162619.pt'
+SPEC_SAVE_NAME = 'test.pt'
 
 ##### - ADDITIONAL CONFIG - #####
-LOG_ROOT = path.join('..', '..', 'log')
+LOG_ROOT = path.join(REL_PATH, 'log')

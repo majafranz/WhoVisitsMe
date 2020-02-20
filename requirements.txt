@@ -6,3 +6,4 @@ pandas
 pillow
 colorlog
 tqdm
+livelossplot

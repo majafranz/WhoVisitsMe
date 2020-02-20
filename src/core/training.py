@@ -1,42 +1,62 @@
-import time
+# I don't need that import, but i got super annoying errors in pycharm. Somehow they are gone now ¯\_(ツ)_/¯
+import pylab
+
 import sys
+from datetime import datetime
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from tqdm import tqdm
 import math
+from livelossplot import PlotLosses
 
-from src.utils.config import NUM_EPOCHS, NUM_CLASSES
-from src.utils.logger import trlog, logger
-from src.core.model import model
+from src.utils.config import NUM_EPOCHS, NUM_CLASSES, PLOT, LR
+from src.utils.logger import logger
+from src.core.model import model, save_model
 from src.core.data import get_dataloaders
 
 
-def train(net, num_epochs, train_loader, test_loader, criterion, optimizer, device):
-    start_time = time.time()
+def train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch):
+    start_time = datetime.now()
+    plot = PlotLosses(skip_first=0)
 
-    for epoch in range(num_epochs):
-        trlog.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
+    num_epochs = NUM_EPOCHS+start_epoch
+
+    for epoch in range(start_epoch, num_epochs):
+        logger.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
         net.train()
-        fit(net, train_loader, criterion, optimizer, device, epoch, training=True)
+        loss, acc = fit(net, train_loader, criterion, optimizer, device, epoch, training=True)
         net.eval()
-        fit(net, test_loader, criterion, optimizer, device, epoch, training=False)
+        val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, training=False)
 
+        if PLOT:
+            plot.update({
+                'loss': loss,
+                'accuracy': acc,
+                'val_loss': val_loss,
+                'val_accuracy': val_acc
+            })
+            plot.draw()
+            print()
+
+    save_model(net, num_epochs)
+
+    logger.info('Finished training in {}'.format((datetime.now()-start_time)))
 
 def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
-
     acc_sum, acc_avg, loss_sum, loss_avg = 0.0, 0.0, 0.0, math.inf
 
-    with tqdm(data_loader, ascii=True, unit='batches',
-              bar_format='{desc:<5.5}{percentage:3.0f}%|{bar:40}| {n_fmt:3}/{total_fmt:3} |'
+    with tqdm(data_loader, ascii=True, unit='batches', leave=True,
+              bar_format='{desc:10}{percentage:3.0f}% |{bar:100}| {n_fmt:3}/{total_fmt:3} |'
                          ' time elapsed: {elapsed}, time remaining: {remaining:5}, {rate_fmt:14} |'
-                         ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}',
-              postfix=[dict(epoch=epoch+1, loss=loss_avg, acc=acc_avg)]) as t:
+                         ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}%',
+              postfix=[dict(epoch=epoch + 1, loss=loss_avg, acc=acc_avg)],
+              file=sys.stdout) as t:
 
         if training:
             t.set_description('training')
         else:
-            t.set_description('training')
+            t.set_description('test')
 
         for i, (images, labels) in enumerate(t):
             images = images.to(device)
@@ -66,20 +86,22 @@ def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
             t.postfix[0]['loss'] = loss_avg
             t.postfix[0]['acc'] = acc_avg
 
+        return loss_avg, acc_avg
+
 
 def start_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info('Using device: {}'.format(device))
 
-    net = model(NUM_CLASSES)
+    net, start_epoch = model(NUM_CLASSES)
     net.to(device)
 
     train_loader, test_loader = get_dataloaders()
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=LR, momentum=0.9)
 
-    train(net, NUM_EPOCHS, train_loader, test_loader, criterion, optimizer, device)
+    train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch)
 
 
 if __name__ == '__main__':
