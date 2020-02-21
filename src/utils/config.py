@@ -2,7 +2,7 @@ from src.utils.enums import Person
 from os import path
 
 ##### - OVERALL CONFIG - #####
-REL_PATH = path.join('..', '..')  # easy to change relative paths for root folder
+REL_PATH = path.join('.')  # easy to change relative paths for root folder
 
 ##### - CAPTURE CONFIG - #####
 PERSON = Person.MAJA
@@ -29,10 +29,10 @@ RANDOM_SEED = False  # If true it uses different training test split for each tr
 NUM_CLASSES = 5
 NUM_EPOCHS = 10
 PLOT = True
-LR = 0.001
+LR = 0.0005
 SAVE_PATH = path.join(REL_PATH, 'models')
-LOAD_MODEL_PATH = None #'test.pt'
-SPEC_SAVE_NAME = None
+LOAD_MODEL_PATH = None #'prototype.pt'
+SPEC_SAVE_NAME = 'prototype.pt'
 
 ##### - ADDITIONAL CONFIG - #####
 LOG_ROOT = path.join(REL_PATH, 'log')

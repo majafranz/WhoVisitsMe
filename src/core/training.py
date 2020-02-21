@@ -100,7 +100,7 @@ def start_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info('Using device: {}'.format(device))
 
-    net, start_epoch = model(NUM_CLASSES)
+    net, start_epoch = model()
     net.to(device)
 
     train_loader, test_loader = get_dataloaders()
@@ -111,5 +111,3 @@ def start_training():
     train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch)
 
 
-if __name__ == '__main__':
-    start_training()

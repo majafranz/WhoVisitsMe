@@ -26,7 +26,7 @@ class RaspiDataset(Dataset):
         self.image_path_series = frame['image']
         self.labels = torch.tensor(frame['label'])
 
-        self.transforms = CustomTransforms(IMAGE_SIZE, IMAGE_SCALE)
+        self.transforms = CustomTransforms(IMAGE_SIZE, IMAGE_SCALE, transed_before=True)
 
     def __getitem__(self, index):
         img_path = path.join(self.data_root, self.image_path_series[index])
@@ -89,10 +89,11 @@ def generate_csv(data_root, absolutePath=True):
 
 
 class CustomTransforms:
-    def __init__(self, dst_size, scale, store=False):
+    def __init__(self, dst_size, scale, store=False, transed_before=False):
         self.dst_size = dst_size
         self.scale = scale
         self.store = store
+        self.transed_before = transed_before
 
     def __call__(self, image):
         ratio = float(self.dst_size * self.scale) / max(image.size)
@@ -109,7 +110,9 @@ class CustomTransforms:
             return transforms(image)
 
         else:
-            image = transforms(image)
+            if not self.transed_before:
+                image = transforms(image)
+
             tensor_transforms = T.Compose([
                 T.ToTensor(),
                 T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))

@@ -7,14 +7,18 @@ from datetime import datetime
 import math
 
 from src.utils.logger import logger
-from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME
+from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLASSES
 
-def model(num_classes):
-    model = resnet.resnet50(pretrained = False)
-    model.fc = nn.Linear(2048, num_classes, bias=True)
 
-    if LOAD_MODEL_PATH is not None:
-        load_path= path.join(SAVE_PATH, LOAD_MODEL_PATH)
+def model(load_path=None):
+    model = resnet.resnet50(pretrained=False)
+    model.fc = nn.Linear(2048, NUM_CLASSES, bias=True)
+
+    if load_path is None and LOAD_MODEL_PATH is not None:
+        load_path = LOAD_MODEL_PATH
+
+    if load_path is not None:
+        load_path = path.join(SAVE_PATH, load_path)
         ckpt = torch.load(load_path)
         model.load_state_dict(ckpt['model_state_dict'])
         # optimizer.load_state_dict(ckpt['optimizer_state_dict'])
@@ -29,7 +33,6 @@ def model(num_classes):
 
 
 def save_model(model, epoch=0, loss=math.inf, name=None):
-
     if SPEC_SAVE_NAME is not None:
         filename = SPEC_SAVE_NAME
 
@@ -48,9 +51,9 @@ def save_model(model, epoch=0, loss=math.inf, name=None):
 
     torch.save({'epoch': epoch,
                 'model_state_dict': model.state_dict(),
-                #'optimizer_state_dict': optimizer.state_dict(),
+                # 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
-            }, full_path)
+                }, full_path)
 
     logger.info('Saved model in \'{:s}\''.format(full_path))
 
