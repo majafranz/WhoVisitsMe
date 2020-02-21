@@ -85,6 +85,7 @@ def generate_csv(data_root, absolutePath=True):
     csvfile = os.path.join(data_root, 'annotation.csv')
     frame.to_csv(csvfile)
     logger.info('Annotation created at {:s}'.format(csvfile))
+    return csvfile
 
 
 class CustomTransforms:
@@ -117,7 +118,7 @@ class CustomTransforms:
 
 
 def store_transformed_imgs():
-    csvfile = os.path.join(DATA_ROOT, 'annotation.csv')
+    csvfile = generate_csv(DATA_ROOT)
     trans_csvfile = os.path.join(TRANS_DATA_ROOT, 'annotation.csv')
 
     if os.path.exists(csvfile):
