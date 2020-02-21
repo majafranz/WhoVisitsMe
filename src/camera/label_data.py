@@ -4,7 +4,8 @@ from src.camera.capture import get_offset_index, get_path_format
 from src.utils.enums import Person
 
 if __name__=='__main__':
-    cv2.namedWindow('LABEL ME!!!!1elf')
+    person_list = ['| {:s}: {:d} |'.format(i.name, i.value) for i in Person]
+    cv2.namedWindow(''.join(p for p in person_list))
 
     img_name_format, root_path_src = get_path_format('unlabeled')
 
