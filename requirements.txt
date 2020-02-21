@@ -7,3 +7,4 @@ pillow
 colorlog
 tqdm
 livelossplot
+opencv-python
