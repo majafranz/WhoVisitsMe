@@ -30,6 +30,9 @@ def get_offset_index(root_path, img_name_format):
 
     return offset
 
+def get_path_format(dirname):
+    return '{:06d}.jpg', path.join(DATA_ROOT, dirname)
+
 
 if __name__ == '__main__':
     camera = PiCamera(sensor_mode=2)
@@ -37,9 +40,7 @@ if __name__ == '__main__':
     if RESOLUTION is not None:
         camera.resolution = RESOLUTION
 
-    dirname = PERSON.name.capitalize()
-    root_path = path.join(DATA_ROOT, dirname)
-    img_name_format = '{:06d}.jpg'
+    img_name_format, root_path = get_path_format(PERSON.name.capitalize())
 
     offset = get_offset_index(root_path, img_name_format)
     camera.start_preview()

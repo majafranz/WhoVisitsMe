@@ -41,6 +41,10 @@ def label():
                 os.remove(os.path.join(full_img_path))
                 break
 
+            elif key == ord('d'):
+                os.remove(os.path.join(full_img_path))
+                break
+
         if key == 27:
             break
 

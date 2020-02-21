@@ -22,6 +22,7 @@ def model(num_classes):
         logger.info('Loaded model from file: \'{:s}\''.format(load_path))
 
     else:
+        logger.info('Training with model from scratch!')
         epoch = 0
 
     return model, epoch

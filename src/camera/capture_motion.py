@@ -6,17 +6,14 @@ import sys
 if __name__ == '__main__' and __package__ is None:
     sys.path.append(path.join(path.dirname(path.realpath(__file__)),'../..'))
 
-from src.camera.capture import get_offset_index
-from src.utils.config import DATA_ROOT
+from src.camera.capture import get_offset_index, get_path_format
 from src.utils.logger import logger
 
 if __name__ == '__main__':
     pir = MotionSensor(4)
     camera = PiCamera(sensor_mode=2)
 
-    img_name_format = '{:06d}.jpg'
-    dirname = 'unlabeled'
-    root_path = path.join(DATA_ROOT, dirname)
+    img_name_format, root_path = get_path_format('unlabeled')
     i = get_offset_index(root_path, img_name_format)
 
 
