@@ -20,7 +20,7 @@ def label():
         img = cv2.imread(full_img_path)
 
         imgcp = img.copy()
-        imgcp = cv2.putText(imgcp, description+'TEST', org=(0,30), fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1,
+        imgcp = cv2.putText(imgcp, description, org=(0,30), fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=1,
                             color=(0, 0, 255), thickness=2)
 
         cv2.imshow(window_name, imgcp)
