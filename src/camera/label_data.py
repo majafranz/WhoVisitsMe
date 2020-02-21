@@ -7,7 +7,7 @@ from src.utils.config import NUM_CLASSES
 
 def label():
     person_list = [' {:s}: {:d} '.format(i.name, i.value) for i in Person]
-    description = '|'.join(p for p in person_list)
+    description = '|'.join(p for p in person_list) + '| Delete: d'
 
     window_name = 'LABEL ME!!!!1elf'
     cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
