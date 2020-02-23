@@ -20,10 +20,16 @@ def process_output(output):
     _, pred = torch.max(output, 1)
     prediction = pred.item()
 
-    person = Person(prediction).name.capitalize()
+    person = Person(prediction)
 
-    print('{:s}, du stinkst.')
+    if Person == Person.MATHIAS:
+        play_sound('ressources/mathias_stinkt_nach_pups.mp3')
 
+    print('{:s}, du stinkst.'.format(person.name.capitalize()))
+
+
+def play_sound(sound_path):
+    os.system('play {:s}'.format(sound_path))
 
 if __name__ == '__main__':
     net = model('prototype.pt')
@@ -34,6 +40,7 @@ if __name__ == '__main__':
     img_format, _ = get_path_format("")
 
     os.makedirs(tmp_img_root)
+
     num_save = 10
     i = 0
     while True:
