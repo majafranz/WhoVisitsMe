@@ -2,7 +2,8 @@ from src.utils.enums import Person
 from os import path
 
 ##### - OVERALL CONFIG - #####
-REL_PATH = path.join('.')  # easy to change relative paths for root folder
+REL_PATH = path.join('..')  # easy to change relative paths for root folder
+                            # done with join due to windows using \ and linux /
 
 ##### - CAPTURE CONFIG - #####
 PERSON = Person.MAJA
@@ -13,7 +14,7 @@ RESOLUTION = None
 RESET = False
 
 ##### - DATA CONFIG - #####
-DATA_ROOT = path.join(REL_PATH, 'data')  # done with join due to windows using \ and linux /
+DATA_ROOT = path.join(REL_PATH, 'data')
 TRANS_DATA_ROOT = path.join(REL_PATH, 'data_trans')
 
 IMAGE_SIZE = 244  # size of input image
@@ -27,12 +28,14 @@ RANDOM_SEED = False  # If true it uses different training test split for each tr
 
 ##### - TRAINING CONFIG - #####
 NUM_CLASSES = 5
-NUM_EPOCHS = 10
+NUM_EPOCHS = 60
 PLOT = True
-LR = 0.0005
+LR = 0.001
+MOMENTUM = 0.9
+
 SAVE_PATH = path.join(REL_PATH, 'models')
 LOAD_MODEL_PATH = None #'prototype.pt'
-SPEC_SAVE_NAME = 'prototype.pt'
+SPEC_SAVE_NAME = 'prototype0.pt'
 
 ##### - ADDITIONAL CONFIG - #####
 LOG_ROOT = path.join(REL_PATH, 'log')

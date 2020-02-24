@@ -10,9 +10,9 @@ from tqdm import tqdm
 import math
 from livelossplot import PlotLosses
 
-from src.utils.config import NUM_EPOCHS, NUM_CLASSES, PLOT, LR
+from src.utils.config import NUM_EPOCHS, PLOT, LR, MOMENTUM
 from src.utils.logger import logger
-from src.core.model import model, save_model
+from src.core.model import model, save_model, CrossEntropyNoSMLoss
 from src.core.data import get_dataloaders
 
 
@@ -26,12 +26,18 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
 
     min_loss = math.inf
 
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', 0.2, 2)
+
     for epoch in range(start_epoch, num_epochs):
         logger.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
+
+        for param_group in optimizer.param_groups:
+            lr = param_group['lr']
+
         net.train()
-        loss, acc = fit(net, train_loader, criterion, optimizer, device, epoch, training=True)
+        loss, acc = fit(net, train_loader, criterion, optimizer, device, epoch, lr, training=True)
         net.eval()
-        val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, training=False)
+        val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, lr, training=False)
 
         if min_loss > val_loss:
             save_name = save_model(net, epoch, loss=val_loss, name=save_name)
@@ -47,17 +53,20 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
             plot.draw()
             print()
 
+        scheduler.step(val_loss)
+
     logger.info('Finished training in {}'.format((datetime.now() - start_time)))
 
 
-def fit(net, data_loader, criterion, optimizer, device, epoch, training=True):
+def fit(net, data_loader, criterion, optimizer, device, epoch, lr, training=True):
     acc_sum, acc_avg, loss_sum, loss_avg = 0.0, 0.0, 0.0, math.inf
 
     with tqdm(data_loader, ascii=True, unit='batches', leave=True,
               bar_format='{desc:10}{percentage:3.0f}% |{bar:100}| {n_fmt:3}/{total_fmt:3} |'
                          ' time elapsed: {elapsed}, time remaining: {remaining:5}, {rate_fmt:14} |'
-                         ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}%',
-              postfix=[dict(epoch=epoch + 1, loss=loss_avg, acc=acc_avg)],
+                         ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}% '
+                         '| lr: {postfix[0][lr]:1.5f}',
+              postfix=[dict(epoch=epoch + 1, loss=loss_avg, acc=acc_avg, lr=lr)],
               file=sys.stdout) as t:
 
         if training:
@@ -105,8 +114,8 @@ def start_training():
 
     train_loader, test_loader = get_dataloaders()
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=LR, momentum=0.9)
+    criterion = CrossEntropyNoSMLoss()
+    optimizer = optim.SGD(net.parameters(), lr=LR, momentum=MOMENTUM)
 
     train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch)
 
