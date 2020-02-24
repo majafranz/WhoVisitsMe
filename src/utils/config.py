@@ -3,7 +3,7 @@ from os import path
 
 ##### - OVERALL CONFIG - #####
 REL_PATH = path.join('..')  # easy to change relative paths for root folder
-                            # done with join due to windows using \ and linux /
+# done with join due to windows using \ and linux /
 
 ##### - CAPTURE CONFIG - #####
 PERSON = Person.MAJA
@@ -28,14 +28,15 @@ RANDOM_SEED = False  # If true it uses different training test split for each tr
 
 ##### - TRAINING CONFIG - #####
 NUM_CLASSES = 5
-NUM_EPOCHS = 60
+NUM_EPOCHS = 10
 PLOT = True
 LR = 0.001
 MOMENTUM = 0.9
+LR_SCALE = 0.5  # factor by which lr will be reduced
 
 SAVE_PATH = path.join(REL_PATH, 'models')
-LOAD_MODEL_PATH = None #'prototype.pt'
-SPEC_SAVE_NAME = 'prototype0.pt'
+LOAD_MODEL_PATH = 'prototype1.pt'
+SPEC_SAVE_NAME = 'prototype1.pt'
 
 ##### - ADDITIONAL CONFIG - #####
 LOG_ROOT = path.join(REL_PATH, 'log')

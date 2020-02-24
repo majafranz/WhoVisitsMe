@@ -4,13 +4,12 @@ import pylab
 import sys
 from datetime import datetime
 import torch
-import torch.optim as optim
-import torch.nn as nn
+import torch.optim.lr_scheduler as lr_scheduler
 from tqdm import tqdm
 import math
 from livelossplot import PlotLosses
 
-from src.utils.config import NUM_EPOCHS, PLOT, LR, MOMENTUM
+from src.utils.config import NUM_EPOCHS, PLOT, LR_SCALE
 from src.utils.logger import logger
 from src.core.model import model, save_model, CrossEntropyNoSMLoss
 from src.core.data import get_dataloaders
@@ -26,7 +25,7 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
 
     min_loss = math.inf
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', 0.2, 2)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', LR_SCALE, 2)
 
     for epoch in range(start_epoch, num_epochs):
         logger.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
@@ -40,8 +39,11 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
         val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, lr, training=False)
 
         if min_loss > val_loss:
-            save_name = save_model(net, epoch, loss=val_loss, name=save_name)
+            save_name = save_model(net, optimizer, epoch, loss=val_loss, name=save_name)
             min_loss = val_loss
+
+        logger.info('val_loss: {:.3f} | val_accuracy: {:.2f}% | train_loss: {:.3f} | train_accuracy: {:.2f}%'
+                    .format(val_loss, val_acc, loss, acc))
 
         if PLOT:
             plot.update({
@@ -65,7 +67,7 @@ def fit(net, data_loader, criterion, optimizer, device, epoch, lr, training=True
               bar_format='{desc:10}{percentage:3.0f}% |{bar:100}| {n_fmt:3}/{total_fmt:3} |'
                          ' time elapsed: {elapsed}, time remaining: {remaining:5}, {rate_fmt:14} |'
                          ' epoch: {postfix[0][epoch]:2d} | loss: {postfix[0][loss]:.2f} | accuracy: {postfix[0][acc]:3.2f}% '
-                         '| lr: {postfix[0][lr]:1.5f}',
+                         '| lr: {postfix[0][lr]}',
               postfix=[dict(epoch=epoch + 1, loss=loss_avg, acc=acc_avg, lr=lr)],
               file=sys.stdout) as t:
 
@@ -109,13 +111,12 @@ def start_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info('Using device: {}'.format(device))
 
-    net, start_epoch = model()
-    net.to(device)
+    net, optimizer, start_epoch, _ = model()
+    net = net.to(device)
 
     train_loader, test_loader = get_dataloaders()
 
     criterion = CrossEntropyNoSMLoss()
-    optimizer = optim.SGD(net.parameters(), lr=LR, momentum=MOMENTUM)
 
     train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch)
 

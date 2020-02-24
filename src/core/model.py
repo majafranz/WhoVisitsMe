@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.nn.functional import nll_loss
 from torch.nn import _reduction
+import torch.optim as optim
 from torchvision.models import resnet
 import os
 from os import path
@@ -9,13 +10,15 @@ from datetime import datetime
 import math
 
 from src.utils.logger import logger
-from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLASSES
+from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLASSES, LR, MOMENTUM
 
 
 def model(load_path=None):
     model = resnet.resnet50(pretrained=False)
     model.fc = nn.Linear(2048, NUM_CLASSES, bias=True)
     model = nn.Sequential(model, nn.LogSoftmax(dim=1))
+
+    optimizer = optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
 
     if load_path is None and LOAD_MODEL_PATH is not None:
         load_path = LOAD_MODEL_PATH
@@ -24,18 +27,26 @@ def model(load_path=None):
         load_path = path.join(SAVE_PATH, load_path)
         ckpt = torch.load(load_path)
         model.load_state_dict(ckpt['model_state_dict'])
-        # optimizer.load_state_dict(ckpt['optimizer_state_dict'])
+        optimizer.load_state_dict(ckpt['optimizer_state_dict'])
+
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.cuda()
+
         epoch = ckpt['epoch']
-        logger.info('Loaded model from file: \'{:s}\''.format(load_path))
+        val_loss = ckpt['loss']
+        logger.info('Loaded model from file: \'{:s}\' in epoch: {:d} with loss: {:.2f}'.format(load_path, epoch, val_loss))
 
     else:
         logger.info('Training with model from scratch!')
         epoch = 0
+        val_loss = math.inf
 
-    return model, epoch
+    return model, optimizer, epoch, val_loss
 
 
-def save_model(model, epoch=0, loss=math.inf, name=None):
+def save_model(model, optimizer, epoch=0, loss=math.inf, name=None):
     if SPEC_SAVE_NAME is not None:
         filename = SPEC_SAVE_NAME
 
@@ -54,7 +65,7 @@ def save_model(model, epoch=0, loss=math.inf, name=None):
 
     torch.save({'epoch': epoch,
                 'model_state_dict': model.state_dict(),
-                # 'optimizer_state_dict': optimizer.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
                 }, full_path)
 
@@ -66,11 +77,11 @@ def save_model(model, epoch=0, loss=math.inf, name=None):
 class CrossEntropyNoSMLoss(nn.CrossEntropyLoss):
     def forward(self, input, target):
         return cross_entropy_no_sm(input, target, weight=self.weight,
-                               ignore_index=self.ignore_index, reduction=self.reduction)
+                                   ignore_index=self.ignore_index, reduction=self.reduction)
 
 
 def cross_entropy_no_sm(input, target, weight=None, size_average=None, ignore_index=-100,
-                  reduce=None, reduction='mean'):
+                        reduce=None, reduction='mean'):
     if size_average is not None or reduce is not None:
         reduction = _reduction.legacy_get_string(size_average, reduce)
 
