@@ -23,9 +23,9 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
     num_epochs = NUM_EPOCHS + start_epoch
     save_name = None
 
-    min_loss = math.inf
+    min_loss, val_loss = math.inf, math.inf
 
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', LR_SCALE, 2)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', LR_SCALE, 3)
 
     for epoch in range(start_epoch, num_epochs):
         logger.info('Epoch: {:d}/{:d}'.format(epoch + 1, num_epochs))
@@ -41,7 +41,7 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
         logger.info('val_loss: {:.3f} | val_accuracy: {:.2f}% | train_loss: {:.3f} | train_accuracy: {:.2f}%'
                     .format(val_loss, val_acc, loss, acc))
 
-        if min_loss > val_loss:
+        if min_loss > val_loss and epoch > 2:
             save_name = save_model(net, epoch, loss=val_loss, name=save_name, lr=lr)
             min_loss = val_loss
 
@@ -57,6 +57,7 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
 
         scheduler.step(val_loss)
 
+    save_model(net, num_epochs, loss=val_loss, name='{:s}_final'.format(save_name), lr=lr)
     logger.info('Finished training in {}'.format((datetime.now() - start_time)))
 
 
@@ -118,5 +119,3 @@ def start_training():
     criterion = CrossEntropyNoSMLoss()
 
     train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch)
-
-

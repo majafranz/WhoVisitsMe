@@ -14,7 +14,7 @@ from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLA
 
 
 def model(device, load_path=None):
-    model = resnet.resnet50(pretrained=False)
+    model = resnet.resnet101(pretrained=False)
     model.fc = nn.Linear(2048, NUM_CLASSES, bias=True)
     model = nn.Sequential(model, nn.Softmax(dim=1))
 
