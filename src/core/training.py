@@ -38,12 +38,12 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
         net.eval()
         val_loss, val_acc = fit(net, test_loader, criterion, optimizer, device, epoch, lr, training=False)
 
-        if min_loss > val_loss:
-            save_name = save_model(net, optimizer, epoch, loss=val_loss, name=save_name)
-            min_loss = val_loss
-
         logger.info('val_loss: {:.3f} | val_accuracy: {:.2f}% | train_loss: {:.3f} | train_accuracy: {:.2f}%'
                     .format(val_loss, val_acc, loss, acc))
+
+        if min_loss > val_loss:
+            save_name = save_model(net, epoch, loss=val_loss, name=save_name, lr=lr)
+            min_loss = val_loss
 
         if PLOT:
             plot.update({
@@ -111,8 +111,7 @@ def start_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info('Using device: {}'.format(device))
 
-    net, optimizer, start_epoch, _ = model()
-    net = net.to(device)
+    net, optimizer, start_epoch, _ = model(device = device)
 
     train_loader, test_loader = get_dataloaders()
 

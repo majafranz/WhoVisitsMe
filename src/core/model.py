@@ -13,40 +13,36 @@ from src.utils.logger import logger
 from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLASSES, LR, MOMENTUM
 
 
-def model(load_path=None):
+def model(device, load_path=None):
     model = resnet.resnet50(pretrained=False)
     model.fc = nn.Linear(2048, NUM_CLASSES, bias=True)
     model = nn.Sequential(model, nn.LogSoftmax(dim=1))
-
-    optimizer = optim.SGD(model.parameters(), lr=LR, momentum=MOMENTUM)
 
     if load_path is None and LOAD_MODEL_PATH is not None:
         load_path = LOAD_MODEL_PATH
 
     if load_path is not None:
         load_path = path.join(SAVE_PATH, load_path)
-        ckpt = torch.load(load_path)
+        ckpt = torch.load(load_path, map_location=device)
         model.load_state_dict(ckpt['model_state_dict'])
-        optimizer.load_state_dict(ckpt['optimizer_state_dict'])
-
-        for state in optimizer.state.values():
-            for k, v in state.items():
-                if torch.is_tensor(v):
-                    state[k] = v.cuda()
-
         epoch = ckpt['epoch']
         val_loss = ckpt['loss']
+        lr = ckpt['lr']
         logger.info('Loaded model from file: \'{:s}\' in epoch: {:d} with loss: {:.2f}'.format(load_path, epoch, val_loss))
 
     else:
         logger.info('Training with model from scratch!')
         epoch = 0
         val_loss = math.inf
+        lr = LR
+
+    model = model.to(device)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=MOMENTUM)
 
     return model, optimizer, epoch, val_loss
 
 
-def save_model(model, optimizer, epoch=0, loss=math.inf, name=None):
+def save_model(model, epoch=0, loss=math.inf, name=None, lr=LR):
     if SPEC_SAVE_NAME is not None:
         filename = SPEC_SAVE_NAME
 
@@ -65,8 +61,8 @@ def save_model(model, optimizer, epoch=0, loss=math.inf, name=None):
 
     torch.save({'epoch': epoch,
                 'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss,
+                'lr': lr,
                 }, full_path)
 
     logger.info('Saved model in \'{:s}\''.format(full_path))
