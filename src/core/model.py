@@ -16,7 +16,7 @@ from src.utils.config import SAVE_PATH, LOAD_MODEL_PATH, SPEC_SAVE_NAME, NUM_CLA
 def model(device, load_path=None):
     model = resnet.resnet50(pretrained=False)
     model.fc = nn.Linear(2048, NUM_CLASSES, bias=True)
-    model = nn.Sequential(model, nn.LogSoftmax(dim=1))
+    model = nn.Sequential(model, nn.Softmax(dim=1))
 
     if load_path is None and LOAD_MODEL_PATH is not None:
         load_path = LOAD_MODEL_PATH
@@ -28,6 +28,7 @@ def model(device, load_path=None):
 
         else:
             ckpt = torch.load(load_path, map_location=lambda storage, loc: storage)
+
         model.load_state_dict(ckpt['model_state_dict'])
         epoch = ckpt['epoch']
         val_loss = ckpt['loss']
@@ -76,7 +77,7 @@ def save_model(model, epoch=0, loss=math.inf, name=None, lr=LR):
 
 class CrossEntropyNoSMLoss(nn.CrossEntropyLoss):
     def forward(self, input, target):
-        return cross_entropy_no_sm(input, target, weight=self.weight,
+        return cross_entropy_no_sm(torch.log(input), target, weight=self.weight,
                                    ignore_index=self.ignore_index, reduction=self.reduction)
 
 
