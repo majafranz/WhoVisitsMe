@@ -23,7 +23,11 @@ def model(device, load_path=None):
 
     if load_path is not None:
         load_path = path.join(SAVE_PATH, load_path)
-        ckpt = torch.load(load_path, map_location=device)
+        if device is torch.device('cuda'):
+            ckpt = torch.load(load_path)
+
+        else:
+            ckpt = torch.load(load_path, map_location=lambda storage, loc: storage)
         model.load_state_dict(ckpt['model_state_dict'])
         epoch = ckpt['epoch']
         val_loss = ckpt['loss']
