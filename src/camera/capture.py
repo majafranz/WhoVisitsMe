@@ -15,7 +15,7 @@ def timer():
         sleep(1)
 
 # create destination folders and calculate image offset index
-def get_offset_index(root_path, img_name_format):
+def get_offset_index(root_path, img_name_format, pin=None):
     offset = 0
     if path.exists(root_path):
         if RESET:
@@ -23,8 +23,13 @@ def get_offset_index(root_path, img_name_format):
             os.makedirs(root_path, exist_ok=True)
 
         else:
-            while os.path.isfile(path.join(root_path, img_name_format.format(offset))):
-                offset += 1
+            if pin is None:
+                while os.path.isfile(path.join(root_path, img_name_format.format(offset))):
+                    offset += 1
+
+            else:
+                while os.path.isfile(path.join(root_path, img_name_format.format(pin, offset))):
+                    offset += 1
     else:
         os.makedirs(root_path, exist_ok=True)
 
