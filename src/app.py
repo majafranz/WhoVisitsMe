@@ -35,18 +35,7 @@ def process_output(output):
 def play_sound(sound_path):
     os.system('play {:s}'.format(sound_path))
 
-def detect_person(net, pir, camera, lock):
-    transforms = CustomTransforms(244, 1.3)
-
-    tmp_img_root = path.join('..', 'TMP')
-    img_format, _ = get_path_format("")
-    
-    img_format = 'pin{}_' + img_format
-
-    os.makedirs(tmp_img_root, exist_ok=True)
-
-    num_save = 1000
-    i = 0
+def detect_person(net, i, num_save, tmp_img_root, img_format, transforms, pir, camera, lock):
 
     while True:
         pir.wait_for_motion()
@@ -63,24 +52,39 @@ def detect_person(net, pir, camera, lock):
         print(output)
         process_output(output)
 
-        pir.wait_for_no_motion()
-        lock.release()
-
         if i < num_save:
             i += 1
         else:
             i = 0
-
+        
+        pir.wait_for_no_motion()
+        lock.release()
 
 if __name__ == '__main__':
     pir0 = MotionSensor(17)
     pir1 = MotionSensor(27)
+    
     camera = PiCamera(sensor_mode=2)
+    
+    num_save = 100
+    i = 0
+
+    tmp_img_root = path.join('..','TMP')
+    os.makedirs(tmp_img_root, exist_ok=True)
+
+    img_format, _ = get_path_format("")
+    img_format = 'pin{}_' + img_format
+    
     lock = Lock()
+    
+    transforms=CustomTransforms(244, 1.3)
     net, _, _, _ = model(device=torch.device('cpu'), load_path='prototype.pt')
-    thread0 = Thread(target=detect_person, args=(net, pir0, camera,lock,))
-    thread1 = Thread(target=detect_person, args=(net, pir1, camera,lock,))
+    
+    thread0 = Thread(target=detect_person, args=(net, i, num_save, tmp_img_root, img_format, transforms, pir0, camera,lock,))
+    thread1 = Thread(target=detect_person, args=(net, i, num_save, tmp_img_root, img_format, transforms, pir1, camera,lock,))
+    
     thread0.start()
     thread1.start()
+    
     thread0.join()
     thread1.join()
