@@ -57,7 +57,7 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
 
         scheduler.step(val_loss)
 
-    save_model(net, num_epochs, loss=val_loss, name='{:s}_final'.format(save_name), lr=lr)
+    save_model(net, num_epochs, loss=val_loss, name='final_{:s}'.format(save_name), lr=lr)
     logger.info('Finished training in {}'.format((datetime.now() - start_time)))
 
 
