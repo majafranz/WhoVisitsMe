@@ -48,12 +48,12 @@ def model(device, load_path=None):
 
 
 def save_model(model, epoch=0, loss=math.inf, name=None, lr=LR):
-    if SPEC_SAVE_NAME is not None:
-        filename = SPEC_SAVE_NAME
+    if name is not None:
+        filename = name
 
     else:
-        if name is not None:
-            filename = name
+        if SPEC_SAVE_NAME is not None:
+            filename = SPEC_SAVE_NAME
 
         else:
             fmt = 'model_%Y%m%d_%H%M%S.pt'

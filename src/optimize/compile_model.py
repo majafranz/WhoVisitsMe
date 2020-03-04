@@ -2,24 +2,31 @@ import tvm
 from tvm import relay
 import torch
 from os import path
-
+from PIL import Image
+from src.core.data import CustomTransforms
 from src.core.model import model
-from src.utils.config import LOAD_MODEL_PATH, SAVE_PATH
+from src.utils.config import LOAD_MODEL_PATH, SAVE_PATH, DATA_ROOT, IMAGE_SCALE, IMAGE_SIZE
 from src.utils.logger import logger
 
 def compile_model(load_path=LOAD_MODEL_PATH):
     net, _, _, _ = model(torch.device('cpu'), load_path=load_path)
-    input_shape = [1, 3, 224, 224]
-    input_data = torch.randn(input_shape)
 
-    scripted_model = torch.jit.trace(net, input_data).eval()
+    img_path = path.join(DATA_ROOT, 'None', '000000.jpg')
+    transforms = CustomTransforms(IMAGE_SIZE, IMAGE_SCALE)
+
+    img = Image.open(img_path)
+    img = transforms(img)
+    img = img.unsqueeze(0)
+
+    scripted_model = torch.jit.trace(net, img).eval()
     input_name = 'input.1'
 
-    shape_dict = {input_name: input_data.shape}
+    shape_dict = {input_name: img.shape}
     mod, params = relay.frontend.from_pytorch(scripted_model,
                                               shape_dict)
 
     target = tvm.target.arm_cpu('rasp3b')
+
 
     with relay.build_config(opt_level=3):
         mod, params = relay.optimize(mod, target, params)
