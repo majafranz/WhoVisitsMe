@@ -13,6 +13,7 @@ from src.utils.config import NUM_EPOCHS, PLOT, LR_SCALE
 from src.utils.logger import logger
 from src.core.model import model, save_model, CrossEntropyNoSMLoss
 from src.core.data import get_dataloaders
+from src.optimize.compile_model import compile_model
 
 
 def train(net, train_loader, test_loader, criterion, optimizer, device, start_epoch):
@@ -57,7 +58,10 @@ def train(net, train_loader, test_loader, criterion, optimizer, device, start_ep
 
         scheduler.step(val_loss)
 
-    save_model(net, num_epochs, loss=val_loss, name='final_{:s}'.format(save_name), lr=lr)
+    if save_name is not None:
+        save_model(net, num_epochs, loss=val_loss, name='final_{:s}'.format(save_name), lr=lr)
+        compile_model(save_name)
+
     logger.info('Finished training in {}'.format((datetime.now() - start_time)))
 
 

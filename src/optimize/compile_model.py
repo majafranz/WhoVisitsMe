@@ -1,44 +1,42 @@
 import tvm
 from tvm import relay
-from PIL import Image
-
-from tvm.relay.frontend.pytorch import get_graph_input_names
-from tvm.contrib import util
-
 import torch
+from os import path
+
 from src.core.model import model
-from src.core.data import CustomTransforms
+from src.utils.config import LOAD_MODEL_PATH, SAVE_PATH
+from src.utils.logger import logger
 
-net, _, _, _ = model(torch.device('cpu'))
-input_shape = [1, 3, 224, 224]
-input_data = torch.randn(input_shape)
-scripted_model = torch.jit.trace(net, input_data).eval()
+def compile_model(load_path=LOAD_MODEL_PATH):
+    net, _, _, _ = model(torch.device('cpu'), load_path=load_path)
+    input_shape = [1, 3, 224, 224]
+    input_data = torch.randn(input_shape)
 
-img_path = '../../data/Mathias/000111.jpg'
-transforms = CustomTransforms(244,1.3)
+    scripted_model = torch.jit.trace(net, input_data).eval()
+    input_name = 'input.1'
 
-img = Image.open(img_path)
-img = transforms(img)
-img = img.unsqueeze(0)
+    shape_dict = {input_name: input_data.shape}
+    mod, params = relay.frontend.from_pytorch(scripted_model,
+                                              shape_dict)
 
-input_name = 'input.1'
-shape_dict = {input_name: img.shape}
-mod, params = relay.frontend.from_pytorch(scripted_model,
-                                          shape_dict)
+    target = tvm.target.arm_cpu('rasp3b')
 
-target = tvm.target.arm_cpu('rasp3b')
+    with relay.build_config(opt_level=3):
+        mod, params = relay.optimize(mod, target, params)
+        graph, lib, params = relay.build(mod,
+                                         target=target,
+                                         params=params)
 
-with relay.build_config(opt_level=3):
-    mod, params = relay.optimize(mod, target, params)
-    graph, lib, params = relay.build(mod,
-                                     target=target,
-                                     params=params)
+    tvm_model_dir = path.join(SAVE_PATH, 'tvm')
 
-lib_fname = ('../../models/tvm/net.tar')
-lib.export_library(lib_fname)
+    save_name = load_path[:load_path.rfind('.')] + '{:s}' if load_path is not None else 'net{:s}'
 
-with open('../../models/tvm/net.json', 'w') as f:
-    f.write(graph)
+    lib.export_library(path.join(tvm_model_dir, save_name.format('.tar')))
 
-with open('../../models/tvm/net.params', 'wb') as f:
-    f.write(relay.save_param_dict(params))
+    with open(path.join(tvm_model_dir, save_name.format('.json')), 'w') as f:
+        f.write(graph)
+
+    with open(path.join(tvm_model_dir, save_name.format('.params')), 'wb') as f:
+        f.write(relay.save_param_dict(params))
+
+    logger.info('compiled model and saved it in {:s}'.format(path.join(tvm_model_dir, save_name.format(''))))
